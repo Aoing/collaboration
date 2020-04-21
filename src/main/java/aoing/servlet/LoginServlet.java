@@ -38,12 +38,12 @@ public class LoginServlet  extends HttpServlet {
         boolean verify = loginService.verify(new User(username, password));
 
         if (verify){
-            req.getRequestDispatcher("/draw.html").forward(req,resp);
+            req.getRequestDispatcher("draw.html").forward(req,resp);
         }else{
+            resp.setContentType("text/html;charset=GB2312");
             PrintWriter writer = resp.getWriter();
-
             writer.println("<script>alert(\"用户名或密码错误\")</script>");
-            req.getRequestDispatcher("/login").forward(req,resp);
+            //req.getRequestDispatcher("login.jsp").forward(req,resp);
         }
 
 

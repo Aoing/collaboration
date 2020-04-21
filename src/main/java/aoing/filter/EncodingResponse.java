@@ -26,7 +26,8 @@ public class EncodingResponse extends HttpServletResponseWrapper {
 
     @Override
     public PrintWriter getWriter() throws IOException {
-        resp.setCharacterEncoding("GBK");
-        return super.getWriter();
+        //设置响应编码
+        resp.setContentType("text/html;charset=GB2312");
+        return resp.getWriter();
     }
 }

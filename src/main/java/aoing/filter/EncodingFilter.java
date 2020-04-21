@@ -28,7 +28,9 @@ public class EncodingFilter implements Filter {
         //使用包装类处理响应的编码
         EncodingResponse encodingResponse = new EncodingResponse((HttpServletResponse) servletResponse);
 
-        //掉包 servletRequest ，使用自定义包装的 servletRequest
+        /*
+         * 掉包 servletRequest 和 servletResponse ，使用自定义包装的 servletRequest 和 servletResponse
+         */
         filterChain.doFilter(encodingRequest,encodingResponse);
     }
 

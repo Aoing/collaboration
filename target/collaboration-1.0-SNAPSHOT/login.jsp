@@ -11,7 +11,7 @@
     <title>登录界面</title>
 </head>
 <body style="text-align: center">
-    <div style="border: 2px deepskyblue solid; width: 200px; height: 100px">
+    <div style="border: 2px deepskyblue solid; width: 200px; height: 100px; margin: 0 auto">
         <form id="login_form" action="/collaboration/login" method="post">
 
             账号：<input name="username">
