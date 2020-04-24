@@ -6,17 +6,29 @@
 </head>
 
 <body style="text-align: center">
-    <div class="sidebar" style="width:100px; background-color: #bbbbbb; margin: 0 auto">
+    <div class="sidebar" style="width:200px; background-color: #bbbbbb; margin: 0 auto">
         <button id="rect_btn">矩形</button>
         <button id="edit_btn">编辑</button>
         <button id="delete_btn">删除</button>
     </div>
     <br>
 
-    <div style="margin: 0 auto; background-color: #FFFFFF; width: 800px; height: 600px; border: 2px #333333 solid;">
-        <canvas id="canvas" style="background-color: #FFFFFF; width: 800px; height: 600px; border: 2px #333333 solid;"></canvas>
+    <div id="canvasDiv" style="margin: 0 auto; background-color: #FFFFFF; width: 800px; height: 600px; border: 2px #333333 solid;">
+        <canvas id="canvas" width="800" height="600" style="background-color: #FFFFFF;  border: 2px #333333 solid;"></canvas>
     </div>
 
-    <script src="js/draw.js"></script>
+    ===============================================================
+
+    <div id = "button_div" style=" height: 30px; width:200px; border:1px gray solid;">
+
+    </div>
+
+    <div id="container" style=" height: 500px; width:1000px; border:1px gray solid; margin :10%;">
+    </div>
+
+    <div id="text" style="position: relative;">
+    </div>
+
+    <script src="js/drawing.js"></script>
 </body>
 </html>
