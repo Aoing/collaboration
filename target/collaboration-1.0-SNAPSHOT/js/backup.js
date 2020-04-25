@@ -12,9 +12,6 @@ var deleteArr = [];
 //保存移动修改的元素
 var modifyArr = [];
 
-//保存新添加的元素
-var addArr = [];
-
 //创建矩形框集合
 var rects=[
     {
@@ -223,8 +220,8 @@ drawConstructor.prototype = {
             xEnd : this.xStart > this.xEnd ? this.xStart : this.xEnd,
             yEnd : this.yStart > this.yEnd ? this.yStart : this.yEnd,
 
-            //定义注释的标志（随机数）
-            mark : randomNum(0,999999999),
+            //定义注释的标志
+            mark : this.mark,
 
             //标记绘制结束坐标相对开始坐标的位置，便于后期确定鼠标是否选中注释
             position : this.position,
@@ -238,10 +235,7 @@ drawConstructor.prototype = {
         };
 
         //将注释对象保存到注释数组中
-        if (annotationElement.width != 0 && annotationElement.height != 0) {
-            rects.push(annotationElement);
-            addArr.push(annotationElement);
-        }
+        rects.push(annotationElement);
     },
 
     deleteAnnotation : function(e){
@@ -263,14 +257,6 @@ drawConstructor.prototype = {
                     rects.splice(i, 1);
                     //将删除的元素保存到 删除的数组中
                     deleteArr.push(_this.selectedAnnotation);
-                }
-            }
-
-            //移除新添加的注释数组中被选中的注释（有问题：新添加的注释还没有id，id 是数据库自主生成的）
-            for (let i = 0; i < addArr.length; i++) {
-                if (_this.selectedAnnotation.mark == addArr[i].mark) {
-                    console.log("被删除的注释 mark ：" + _this.selectedAnnotation.mark)
-                    addArr.splice(i, 1);
                 }
             }
 
@@ -506,7 +492,7 @@ drawConstructor.prototype = {
 
         di_text.innerHTML= "鼠标松开左键，鼠标坐标："+ this.xEnd +","+ this.yEnd +",鼠标结束位置："+ this.position;
 
-        // this.mark = rects.length + 1;
+        this.mark = rects.length + 1;
 
         //判断如果初始坐标和结束坐标一样，则不进行绘制
         if(( this.xStart != this.xEnd ) || ( this.yStart != this.yEnd )){
@@ -555,7 +541,7 @@ drawConstructor.prototype = {
 
 
             di_text.innerHTML = "鼠标坐标：(" + this.x + "," + this.y + ")";
-            // console.log(rects.length + ", " + rects);
+            console.log(rects.length + ", " + rects);
         }
 
 
@@ -599,17 +585,6 @@ drawConstructor.prototype = {
             this.selectedAnnotation.xEnd = this.selectedAnnotation.xStart + this.selectedAnnotation.width;
             this.selectedAnnotation.yEnd = this.selectedAnnotation.yStart + this.selectedAnnotation.height;
 
-            /*let x1 = this.selectedAnnotation.xStart;
-            let y1 = this.selectedAnnotation.yStart;
-            let x2 = this.selectedAnnotation.xEnd;
-            let y2 = this.selectedAnnotation.yEnd;
-
-            //调整左上角和右下角坐标，保证左上角坐标比右下角小
-            this.selectedAnnotation.xStart = x1 < x2 ? x1 : x2;
-            this.selectedAnnotation.yStart = y1 < y2 ? y1 : y2;
-            this.selectedAnnotation.xEnd = x1 > x2 ? x1 : x2;
-            this.selectedAnnotation.yEnd = y1 > y2 ? y1 : y2;*/
-
             //重新绘制
             this.drawRects(rects);
         }
@@ -639,9 +614,9 @@ drawConstructor.prototype = {
 
                 _this.canvas.onmousemove = function (e) {
 
-                    if (_this.selectedAnnotation != null) {
+                    if (this.selectedAnnotation != null) {
                         //判断如果单击到矩形框的右下角则进行改变尺寸操作，否则进行拖动操作
-                        if (_this.selectedAnnotation.isSelected) {
+                        if (this.selectedAnnotation.isSelected) {
                             _this._changeSize(e);
                         } else {
                             _this._moveAnnotation(e);
@@ -654,40 +629,22 @@ drawConstructor.prototype = {
 
                     // if( !rects[__this.selectedAnnotationIndex].isSelected ){
 
-                    if (_this.selectedAnnotation != null) { //将选中的矩形框边框变回原先样式
-                        _this.selectedAnnotation.lineWidth = 1;
+                    if (this.selectedAnnotation != null) { //将选中的矩形框边框变回原先样式
+                        this.selectedAnnotation.lineWidth = 1;
 
-                        //在编辑完成后（松开鼠标左键）将移动修改的注释保存到修改的数组中，先遍历该注释是否已经在 modifyArr 中存在，如果不存在加入，存在直接修改
-                        if (modifyArr == null || modifyArr.length <= 0){
-                            modifyArr.push(_this.selectedAnnotation);
-                        }else{
-                            for (let i = 0; i < modifyArr.length; i++){
-                                if (_this.selectedAnnotation.id == modifyArr[i].id){
-                                    modifyArr[i] = _this.selectedAnnotation;
-                                }else{
-                                    modifyArr.push(_this.selectedAnnotation);
-                                }
-                            }
-                        }
-
-                        //对于新添加的 adArr 中的元素还未保存到数据库就修改了，也要对 adArr 进行更新
-                        for (let i = 0; i < addArr.length; i++){
-                            if (_this.selectedAnnotation.mark == addArr[i].mark){
-                                addArr[i] = _this.selectedAnnotation;
-                            }else{
-                                console.log("addArr 中不存在mark是 "+ _this.selectedAnnotation.mark + " 的元素");
-                            }
-                        }
+                        //在编辑完成后（松开鼠标左键）将移动修改的注释保存到修改的数组中
+                        modifyArr.push(this.selectedAnnotation);
 
                         _this.drawRects(rects);
 
                         // }
 
+
                         //清除mousemove和mouseup,onmousedown事件
                         this.onmousemove = this.onmouseup = this.onclick = null;
 
                         //重新将右下角选择状态置为false，否则会导致改变大小操作一直处于激活状态
-                        _this.selectedAnnotation.isSelected = false;
+                        this.selectedAnnotation.isSelected = false;
                     }
                 };
 
@@ -750,21 +707,6 @@ function findAnnotation (array, id){
         }
     }
     return null;
-}
-
-//生成从minNum到maxNum的随机数
-function randomNum(minNum,maxNum){
-    switch(arguments.length){
-        case 1:
-            return parseInt(Math.random()*minNum+1,10);
-            break;
-        case 2:
-            return parseInt(Math.random()*(maxNum-minNum+1)+minNum,10);
-            break;
-        default:
-            return 0;
-            break;
-    }
 }
 
 

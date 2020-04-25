@@ -24,14 +24,11 @@ webSocket.onmessage=function (ev) {
     //接收服务端发送的数据
     rects = JSON.parse(ev.data);
 
-    alert(rects);
-
     //将从服务端接收的数据加入到全局 map 中
     for (let i = 0; i < rects.length; i++){
         map.set(rects[i].id, rects[i]);
     }
 
-    alert(map.size);
     //重新绘制服务端发送的数据
     canvasDiv.drawRects(rects);
 
@@ -56,18 +53,63 @@ function setMessage(message){
     document.getElementById("div").innerHTML+=message+"<br/>";
 }
 
-function sendMessage(){
-
+/*function sendMessage() {
+    //将全局的注释数组转为 json 串
     let content = JSON.stringify(rects);
-    webSocket.send(content);
+    //发送到服务端
+    webSocket.send( type + "::" + content);
+}*/
 
+//使用闭包函数可以在 addEventListener 中传递参数
+function sendMessage(type){
 
-    /*
-        for (let i = 0; i < rects.length; i++){
-            let content = JSON.stringify(rects[i]);
-            webSocket.send(content);
+    return function () {
+        let content = "";
+        /*switch (type) {
+            case "save":
+                //将全局的注释数组转为 json 串
+                content = JSON.stringify(rects);
+                console.log("保存数据")
+                break;
+
+            case "delete":
+                content = JSON.stringify(deleteArr);
+                console.log("删除数据")
+                break;
+
+            case "modify":
+                content = JSON.stringify(modifyArr);
+                console.log("修改数据")
+                break;
+
+            default:
+                break;
+
+        }*/
+
+        if (deleteArr != null && deleteArr.length > 0){
+            type = "delete";
+            content = JSON.stringify(deleteArr);
+            webSocket.send( type + "::" + content);
+            console.log("删除数据")
         }
-        */
+
+        if (modifyArr != null && modifyArr.length > 0){
+            type = "modify";
+            content = JSON.stringify(modifyArr);
+            webSocket.send( type + "::" + content);
+            console.log("修改数据")
+        }
+        if (addArr != null && addArr.length > 0){
+            type = "save";
+            //将全局的注释数组转为 json 串
+            content = JSON.stringify(addArr);
+            webSocket.send( type + "::" + content);
+            console.log("保存数据")
+        }
+    }
+
 }
 
-btns.save_btn.addEventListener("click", sendMessage);
+btns.save_btn.addEventListener("click", sendMessage("save"));
+//btns.delete_btn.addEventListener("click", sendMessage("delete"));

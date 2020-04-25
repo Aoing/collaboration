@@ -6,6 +6,15 @@ var globale = {
 
 var map = new Map();
 
+//保存删除的元素
+var deleteArr = [];
+
+//保存移动修改的元素
+var modifyArr = [];
+
+//保存新添加的元素
+var addArr = [];
+
 //创建矩形框集合
 var rects=[
     {
@@ -143,6 +152,12 @@ function drawConstructor(div){
     //定义被选中的注释所在注释数组的下标
     this.selectedIndex = null;
 
+    //定义被选中的注释 id
+    this.selectedID = null;
+
+    //定义被选中的注释
+    this.selectedAnnotation = null;
+
     //获取被选中的矩形的绘制起始点坐标
     this.selected_xStart = null;
     this.selected_yStart = null;
@@ -208,8 +223,8 @@ drawConstructor.prototype = {
             xEnd : this.xStart > this.xEnd ? this.xStart : this.xEnd,
             yEnd : this.yStart > this.yEnd ? this.yStart : this.yEnd,
 
-            //定义注释的标志
-            mark : this.mark,
+            //定义注释的标志（随机数）
+            mark : randomNum(0,999999999),
 
             //标记绘制结束坐标相对开始坐标的位置，便于后期确定鼠标是否选中注释
             position : this.position,
@@ -223,7 +238,10 @@ drawConstructor.prototype = {
         };
 
         //将注释对象保存到注释数组中
-        rects.push(annotationElement);
+        if (annotationElement.width != 0 && annotationElement.height != 0) {
+            rects.push(annotationElement);
+            addArr.push(annotationElement);
+        }
     },
 
     deleteAnnotation : function(e){
@@ -235,11 +253,26 @@ drawConstructor.prototype = {
         _this.x = ev.offsetX;
         _this.y = ev.offsetY;
 
-        _this.selectedIndex = _this.isSelected();
+        _this.selectedAnnotation = _this.isSelected(rects);
 
-        if(_this.selectedIndex >= 0){
+        if(_this.selectedAnnotation != null){
             //移除注释数组中被选中的注释
-            rects.splice(_this.selectedIndex,1);
+            for (let i = 0; i < rects.length; i++) {
+                if (_this.selectedAnnotation.id == rects[i].id) {
+                    console.log("被删除的注释 id ：" + _this.selectedAnnotation.id)
+                    rects.splice(i, 1);
+                    //将删除的元素保存到 删除的数组中
+                    deleteArr.push(_this.selectedAnnotation);
+                }
+            }
+
+            //移除新添加的注释数组中被选中的注释（有问题：新添加的注释还没有id，id 是数据库自主生成的）
+            for (let i = 0; i < addArr.length; i++) {
+                if (_this.selectedAnnotation.mark == addArr[i].mark) {
+                    console.log("被删除的注释 mark ：" + _this.selectedAnnotation.mark)
+                    addArr.splice(i, 1);
+                }
+            }
 
             //重新绘制注释
             _this.drawRects(rects);
@@ -336,24 +369,24 @@ drawConstructor.prototype = {
 
 
     //判断鼠标是否选中注释，如果选中注释右下角则将 isSelected 置为 true ,并且返回该注释对应的注释数组下标
-    isSelected : function(){
+    isSelected : function(annotationArr){
 
         /*//将当前对象 this 赋值给 __this：代表 drawConstructor 对象，否则在触发事件时，this 指向的事件
         _this = this;*/
 
-        for(let i = rects.length-1; i >= 0; i--){
-            let rect = rects[i];
+        for(let i = annotationArr.length-1; i >= 0; i--){
+            let annotation = annotationArr[i];
             //使用路径绘制矩形时，直接判断鼠标点击坐标是否在矩形内即可
-            if((rect.xStart < this.x) && (rect.yStart < this.y) && (rect.xEnd >= this.x ) && (rect.yEnd >= this.y )){
+            if((annotation.xStart < this.x) && (annotation.yStart < this.y) && (annotation.xEnd >= this.x ) && (annotation.yEnd >= this.y )){
 
                 //判断鼠标是否点击右下角，如果点击右下角则将rects[i].isSelected置位true
-                if((rect.xEnd - 10 < this.x) && (rect.yEnd - 10 < this.y) && (rect.xEnd >= this.x ) && (rect.yEnd >= this.y )){
+                if((annotation.xEnd - 10 < this.x) && (annotation.yEnd - 10 < this.y) && (annotation.xEnd >= this.x ) && (annotation.yEnd >= this.y )){
 
-                    rect.isSelected = true;
+                    annotation.isSelected = true;
                 }
 
                 //alert("选中矩形框:"+rects[i].mark);
-                return i;
+                return annotation;
             }
 
 
@@ -473,7 +506,7 @@ drawConstructor.prototype = {
 
         di_text.innerHTML= "鼠标松开左键，鼠标坐标："+ this.xEnd +","+ this.yEnd +",鼠标结束位置："+ this.position;
 
-        this.mark = rects.length + 1;
+        // this.mark = rects.length + 1;
 
         //判断如果初始坐标和结束坐标一样，则不进行绘制
         if(( this.xStart != this.xEnd ) || ( this.yStart != this.yEnd )){
@@ -489,26 +522,26 @@ drawConstructor.prototype = {
         ev = e || event;
         this.x = ev.offsetX;
         this.y = ev.offsetY;
-        this.selectedIndex = this.isSelected();
+        this.selectedAnnotation = this.isSelected(rects);
 
         //alert("_this.selectedAnnotationIndex:"+_this.selectedAnnotationIndex);
 
-        if(this.selectedIndex >= 0){
+        if(this.selectedAnnotation != null){
 
             //将选中的矩形框边框加粗
-            rects[this.selectedIndex].lineWidth = 5;
+            this.selectedAnnotation.lineWidth = 5;
 
             //获取被选中的矩形的绘制起始点坐标
-            this.selected_xStart = rects[this.selectedIndex].xStart;
-            this.selected_yStart = rects[this.selectedIndex].yStart;
+            this.selected_xStart = this.selectedAnnotation.xStart;
+            this.selected_yStart = this.selectedAnnotation.yStart;
 
             //获取被选中的矩形的绘制结束点坐标
-            this.selected_xEnd = rects[this.selectedIndex].xEnd;
-            this.selected_yEnd = rects[this.selectedIndex].yEnd;
+            this.selected_xEnd = this.selectedAnnotation.xEnd;
+            this.selected_yEnd = this.selectedAnnotation.yEnd;
 
             //获取被选中的矩形的尺寸
-            this.selected_width = rects[this.selectedIndex].width;
-            this.selected_height = rects[this.selectedIndex].height;
+            this.selected_width = this.selectedAnnotation.width;
+            this.selected_height = this.selectedAnnotation.height;
 
             //将注释对象保存到注释数组中
             // rects.push(_this.selectedAnnotation);
@@ -521,8 +554,8 @@ drawConstructor.prototype = {
             this.drawCircle(this.selected_xEnd, this.selected_yEnd);
 
 
-            di_text.innerHTML= "鼠标坐标：("+ this.x +","+ this.y +")";
-            console.log(rects.length + ", " + rects);
+            di_text.innerHTML = "鼠标坐标：(" + this.x + "," + this.y + ")";
+            // console.log(rects.length + ", " + rects);
         }
 
 
@@ -536,13 +569,13 @@ drawConstructor.prototype = {
         this.xEnd = ev.offsetX;
         this.yEnd = ev.offsetY;
 
-        if((this.selectedIndex) >= 0){
+        if((this.selectedAnnotation) != null){
 
             //修改被选中的矩形的坐标:原始坐标+鼠标移动的距离
-            rects[this.selectedIndex].xStart = this.selected_xStart + this.xEnd - this.xStart;
-            rects[this.selectedIndex].yStart = this.selected_yStart + this.yEnd - this.yStart;
-            rects[this.selectedIndex].xEnd = this.selected_xEnd + this.xEnd - this.xStart;
-            rects[this.selectedIndex].yEnd = this.selected_yEnd + this.yEnd - this.yStart;
+            this.selectedAnnotation.xStart = this.selected_xStart + this.xEnd - this.xStart;
+            this.selectedAnnotation.yStart = this.selected_yStart + this.yEnd - this.yStart;
+            this.selectedAnnotation.xEnd = this.selected_xEnd + this.xEnd - this.xStart;
+            this.selectedAnnotation.yEnd = this.selected_yEnd + this.yEnd - this.yStart;
 
             //重新绘制
             this.drawRects(rects);
@@ -558,13 +591,25 @@ drawConstructor.prototype = {
         this.yEnd = ev.offsetY;
 
 
-        if((this.selectedIndex) >= 0){
+        if((this.selectedAnnotation) != null){
             //修改被选中的矩形的坐标:原始坐标+鼠标移动的距离
-            rects[this.selectedIndex].width = this.selected_width + this.xEnd - this.xStart;
-            rects[this.selectedIndex].height = this.selected_height + this.yEnd - this.yStart;
+            this.selectedAnnotation.width = this.selected_width + this.xEnd - this.xStart;
+            this.selectedAnnotation.height = this.selected_height + this.yEnd - this.yStart;
 
-            rects[this.selectedIndex].xEnd = rects[this.selectedIndex].xStart + rects[this.selectedIndex].width;
-            rects[this.selectedIndex].yEnd = rects[this.selectedIndex].yStart + rects[this.selectedIndex].height;
+            this.selectedAnnotation.xEnd = this.selectedAnnotation.xStart + this.selectedAnnotation.width;
+            this.selectedAnnotation.yEnd = this.selectedAnnotation.yStart + this.selectedAnnotation.height;
+
+            let x1 = this.selectedAnnotation.xStart;
+            let y1 = this.selectedAnnotation.yStart;
+            let x2 = this.selectedAnnotation.xEnd;
+            let y2 = this.selectedAnnotation.yEnd;
+
+            //调整左上角和右下角坐标，保证左上角坐标比右下角小
+            this.selectedAnnotation.xStart = x1 < x2 ? x1 : x2;
+            this.selectedAnnotation.yStart = y1 < y2 ? y1 : y2;
+            this.selectedAnnotation.xEnd = x1 > x2 ? x1 : x2;
+            this.selectedAnnotation.yEnd = y1 > y2 ? y1 : y2;
+
             //重新绘制
             this.drawRects(rects);
         }
@@ -594,9 +639,9 @@ drawConstructor.prototype = {
 
                 _this.canvas.onmousemove = function (e) {
 
-                    if (_this.selectedIndex >= 0) {
+                    if (_this.selectedAnnotation != null) {
                         //判断如果单击到矩形框的右下角则进行改变尺寸操作，否则进行拖动操作
-                        if (rects[_this.selectedIndex].isSelected) {
+                        if (_this.selectedAnnotation.isSelected) {
                             _this._changeSize(e);
                         } else {
                             _this._moveAnnotation(e);
@@ -609,19 +654,40 @@ drawConstructor.prototype = {
 
                     // if( !rects[__this.selectedAnnotationIndex].isSelected ){
 
-                    if (_this.selectedIndex >= 0) { //将选中的矩形框边框变回原先样式
-                        rects[_this.selectedIndex].lineWidth = 1;
+                    if (_this.selectedAnnotation != null) { //将选中的矩形框边框变回原先样式
+                        _this.selectedAnnotation.lineWidth = 1;
+
+                        //在编辑完成后（松开鼠标左键）将移动修改的注释保存到修改的数组中，先遍历该注释是否已经在 modifyArr 中存在，如果不存在加入，存在直接修改
+                        if (modifyArr == null || modifyArr.length <= 0){
+                            modifyArr.push(_this.selectedAnnotation);
+                        }else{
+                            for (let i = 0; i < modifyArr.length; i++){
+                                if (_this.selectedAnnotation.id == modifyArr[i].id){
+                                    modifyArr[i] = _this.selectedAnnotation;
+                                }else{
+                                    modifyArr.push(_this.selectedAnnotation);
+                                }
+                            }
+                        }
+
+                        //对于新添加的 adArr 中的元素还未保存到数据库就修改了，也要对 adArr 进行更新
+                        for (let i = 0; i < addArr.length; i++){
+                            if (_this.selectedAnnotation.mark == addArr[i].mark){
+                                addArr[i] = _this.selectedAnnotation;
+                            }else{
+                                console.log("addArr 中不存在mark是 "+ _this.selectedAnnotation.mark + " 的元素");
+                            }
+                        }
 
                         _this.drawRects(rects);
 
                         // }
 
-
                         //清除mousemove和mouseup,onmousedown事件
                         this.onmousemove = this.onmouseup = this.onclick = null;
 
                         //重新将右下角选择状态置为false，否则会导致改变大小操作一直处于激活状态
-                        rects[_this.selectedIndex].isSelected = false;
+                        _this.selectedAnnotation.isSelected = false;
                     }
                 };
 
@@ -662,8 +728,6 @@ drawConstructor.prototype = {
         //将当前对象 this 赋值给 __this：代表 drawConstructor 对象，否则在触发事件时，this 指向的事件
         _this = this;
 
-        //__this：KM_Annotation_Constructor对象，_this：当前canvas对象
-        // __this._drawAnnotationEvent = null;
         _this.canvas.onclick = function (e) {
 
             _this.deleteAnnotation(e);
@@ -675,10 +739,34 @@ drawConstructor.prototype = {
         for (let i = 0; i < rects.length; i++){
             console.log(rects[i].date);
         }
-        alert("保存注释");
     },
 
 }
+
+function findAnnotation (array, id){
+    for (let i = 0; i < array.length; i++){
+        if (id == array[i].id){
+            return array[i];
+        }
+    }
+    return null;
+}
+
+//生成从minNum到maxNum的随机数
+function randomNum(minNum,maxNum){
+    switch(arguments.length){
+        case 1:
+            return parseInt(Math.random()*minNum+1,10);
+            break;
+        case 2:
+            return parseInt(Math.random()*(maxNum-minNum+1)+minNum,10);
+            break;
+        default:
+            return 0;
+            break;
+    }
+}
+
 
 var but_test = document.getElementById("but_test");
 var button_div = document.getElementById("button_div");

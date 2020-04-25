@@ -1,6 +1,7 @@
 package aoing.dao;
 
 import aoing.bean.Annotation;
+import aoing.utils.CommonUtils;
 import aoing.utils.JdbcUtils;
 import com.sun.org.apache.xml.internal.utils.ThreadControllerWrapper;
 
@@ -11,6 +12,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -31,23 +33,30 @@ public class AnnotationDaoImpl implements AnnotationDao {
 
             String sql = "insert into annotation (xStart, yStart, width, height, xEnd, yEnd, position, mark, lineWidth, borderColor, isSelected, author, date) value (?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
-            pstmt = con.prepareStatement(sql);
+            if (load(annotation.getId()) == null) {
+                CommonUtils.LOGGER.info("要保存的注释 id 在数据库中不存在，即将保存新数据。");
 
-            pstmt.setInt(1, annotation.getxStart());
-            pstmt.setInt(2, annotation.getyStart());
-            pstmt.setInt(3, annotation.getWidth());
-            pstmt.setInt(4, annotation.getHeight());
-            pstmt.setInt(5, annotation.getxEnd());
-            pstmt.setInt(6, annotation.getyEnd());
-            pstmt.setString(7, annotation.getPosition());
-            pstmt.setString(8, annotation.getMark());
-            pstmt.setInt(9, annotation.getLineWidth());
-            pstmt.setString(10, annotation.getBorderColor());
-            pstmt.setBoolean(11, annotation.getIsSelected());
-            pstmt.setString(12, annotation.getAuthor());
-            pstmt.setString(13, annotation.getDate());
+                pstmt = con.prepareStatement(sql);
 
-            pstmt.executeUpdate();
+                pstmt.setInt(1, annotation.getxStart());
+                pstmt.setInt(2, annotation.getyStart());
+                pstmt.setInt(3, annotation.getWidth());
+                pstmt.setInt(4, annotation.getHeight());
+                pstmt.setInt(5, annotation.getxEnd());
+                pstmt.setInt(6, annotation.getyEnd());
+                pstmt.setString(7, annotation.getPosition());
+                pstmt.setString(8, annotation.getMark());
+                pstmt.setInt(9, annotation.getLineWidth());
+                pstmt.setString(10, annotation.getBorderColor());
+                pstmt.setBoolean(11, annotation.getIsSelected());
+                pstmt.setString(12, annotation.getAuthor());
+                pstmt.setString(13, annotation.getDate());
+
+                pstmt.executeUpdate();
+            }else{
+                CommonUtils.LOGGER.info("要保存的注释 id 在数据库中已存在，取消保存数据。");
+            }
+
         }catch (Exception e){
             throw new RuntimeException(e);
         }finally {
@@ -67,23 +76,29 @@ public class AnnotationDaoImpl implements AnnotationDao {
         PreparedStatement pstmt = null;
         try {
             con = JdbcUtils.getConnection();
-            String sql = "update annotation set xStart=?, yStart=?,  width=?, height=?, xEnd=?, yEnd=?, position=?, mark=?, lineWidth=?, borderColor=?, isSelected=?, author=?, date=? where id=? ";
-            pstmt = con.prepareStatement(sql);
-            pstmt.setInt(1, annotation.getxStart());
-            pstmt.setInt(2, annotation.getyStart());
-            pstmt.setInt(3, annotation.getWidth());
-            pstmt.setInt(4, annotation.getHeight());
-            pstmt.setInt(5, annotation.getxEnd());
-            pstmt.setInt(6, annotation.getyEnd());
-            pstmt.setString(7, annotation.getPosition());
-            pstmt.setString(8, annotation.getMark());
-            pstmt.setInt(9, annotation.getLineWidth());
-            pstmt.setString(10, annotation.getBorderColor());
-            pstmt.setBoolean(11, annotation.getIsSelected());
-            pstmt.setString(12, annotation.getAuthor());
-            pstmt.setString(13, annotation.getDate());
 
-            pstmt.executeUpdate();
+            //判断注释是否存在
+            if (load(annotation.getId()) != null){
+                String sql = "update annotation set xStart=?, yStart=?,  width=?, height=?, xEnd=?, yEnd=?, position=?, mark=?, lineWidth=?, borderColor=?, isSelected=?, author=?, date=? where id=? ";
+                pstmt = con.prepareStatement(sql);
+                pstmt.setInt(1, annotation.getxStart());
+                pstmt.setInt(2, annotation.getyStart());
+                pstmt.setInt(3, annotation.getWidth());
+                pstmt.setInt(4, annotation.getHeight());
+                pstmt.setInt(5, annotation.getxEnd());
+                pstmt.setInt(6, annotation.getyEnd());
+                pstmt.setString(7, annotation.getPosition());
+                pstmt.setString(8, annotation.getMark());
+                pstmt.setInt(9, annotation.getLineWidth());
+                pstmt.setString(10, annotation.getBorderColor());
+                pstmt.setBoolean(11, annotation.getIsSelected());
+                pstmt.setString(12, annotation.getAuthor());
+                pstmt.setString(13, annotation.getDate());
+                pstmt.setInt(14, annotation.getId());
+
+                pstmt.executeUpdate();
+            }
+
         }catch (Exception e){
             throw new RuntimeException(e);
         }finally {
@@ -128,7 +143,7 @@ public class AnnotationDaoImpl implements AnnotationDao {
             pstmt.setInt(1, id);
             rs = pstmt.executeQuery();
             if(rs.next()) {
-                return new Annotation(rs.getInt(2), rs.getInt(3), rs.getInt(4),rs.getInt(5),  rs.getInt(6),  rs.getInt(7), rs.getString(8), rs.getString(9), rs.getInt(10), rs.getString(11), rs.getBoolean(12), rs.getString(13), rs.getString(14));
+                return new Annotation(rs.getInt(1), rs.getInt(2), rs.getInt(3), rs.getInt(4),rs.getInt(5),  rs.getInt(6),  rs.getInt(7), rs.getString(8), rs.getString(9), rs.getInt(10), rs.getString(11), rs.getBoolean(12), rs.getString(13), rs.getString(14));
             }
             return null;
         } catch(Exception e) {
@@ -143,7 +158,7 @@ public class AnnotationDaoImpl implements AnnotationDao {
         }
     }
 
-    public List<Annotation> findAll() {
+    public List<Annotation> findAllList() {
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -154,7 +169,7 @@ public class AnnotationDaoImpl implements AnnotationDao {
             rs = pstmt.executeQuery();
             List<Annotation> annotationList = new ArrayList<Annotation>();
             while(rs.next()) {
-                annotationList.add(new Annotation(rs.getInt(2), rs.getInt(3), rs.getInt(4),rs.getInt(5),  rs.getInt(6),  rs.getInt(7), rs.getString(8), rs.getString(9), rs.getInt(10), rs.getString(11), rs.getBoolean(12), rs.getString(13), rs.getString(14)));
+                annotationList.add(new Annotation(rs.getInt(1), rs.getInt(2), rs.getInt(3), rs.getInt(4),rs.getInt(5),  rs.getInt(6),  rs.getInt(7), rs.getString(8), rs.getString(9), rs.getInt(10), rs.getString(11), rs.getBoolean(12), rs.getString(13), rs.getString(14)));
             }
             return annotationList;
         } catch(Exception e) {
@@ -165,5 +180,13 @@ public class AnnotationDaoImpl implements AnnotationDao {
                 if(con != null) con.close();
             } catch(SQLException e) {}
         }
+    }
+
+    public Annotation[] findAllArr() {
+        List<Annotation> allList = findAllList();
+        
+        Annotation[] annotationArr = allList.toArray(new Annotation[allList.size()]);
+
+        return annotationArr;
     }
 }

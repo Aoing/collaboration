@@ -19,6 +19,7 @@ public interface AnnotationDao {
 
     public Annotation load(int id);
 
-    public List<Annotation> findAll();
+    public List<Annotation> findAllList();
 
+    public Annotation[] findAllArr();
 }

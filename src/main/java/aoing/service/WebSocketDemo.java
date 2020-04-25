@@ -5,6 +5,8 @@ import aoing.dao.AnnotationDao;
 import aoing.dao.AnnotationDaoFactory;
 import aoing.utils.CommonUtils;
 import aoing.utils.JackSonUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.json.Json;
 import javax.websocket.OnClose;
@@ -26,24 +28,28 @@ import java.util.concurrent.CopyOnWriteArraySet;
 @ServerEndpoint("/websocket")
 public class WebSocketDemo {
 
-    private static  int onlineCount=1;
+    private static int onlineCount=1;
     private Session session;
 
+    public static final Logger LOGGER = LogManager.getLogger(CommonUtils.class);
+
+    private static AnnotationDao annotationDao = AnnotationDaoFactory.getAnnotationDao();
 
     private static final CopyOnWriteArraySet<WebSocketDemo> set=new CopyOnWriteArraySet();
 
     @OnOpen
     public void open(Session session){
         this.session = session;
-        CommonUtils.LOGGER.info(this.session.getBasicRemote() + "===========>打开websocket");
+        LOGGER.info("===========>打开websocket");
         set.add(this);
         add();
 
         for(WebSocketDemo item:set){
             try {
-                item.sendMessage("[{\"xStart\":0,\"yStart\":0,\"width\":100,\"height\":100,\"xEnd\":100,\"yEnd\":100,\"position\":\"bottomRight\",\"mark\":\"1\",\"lineWidth\":1,\"borderColor\":\"blue\",\"isSelected\":false,\"author\":\"author\",\"date\":\"20200424\",\"id\":0},{\"xStart\":211,\"yStart\":36,\"width\":998,\"height\":479,\"xEnd\":1209,\"yEnd\":515,\"mark\":2,\"position\":\"bottomRight\",\"lineWidth\":1,\"isSelected\":false,\"date\":\"2020/4/25 上午9:38:44\"}]");
+                LOGGER.info("连接建立，向客户端发送数据");
+                item.sendMessage();
             }catch (Exception e){
-                CommonUtils.LOGGER.error(e);
+                LOGGER.error(e);
                 continue;
             }
         }
@@ -53,32 +59,49 @@ public class WebSocketDemo {
     public void close(){
         set.remove(this);
         del();
-        CommonUtils.LOGGER.info("===>关闭websocket=======");
+        LOGGER.info("===>关闭websocket=======");
     }
 
     @OnMessage
     public void onMessage(String message,Session session){
 
-        CommonUtils.LOGGER.info("从客户端接收的消息 message：{}", message);
+        LOGGER.info("从客户端接收的消息：{}", message);
 
-        Annotation[] annotationArr = JackSonUtils.jsonArrToBeanArr(message, Annotation[].class);
+        String[] split = message.split("::");
 
-        CommonUtils.LOGGER.info("从服务器端获取的数据：{}", annotationArr.length);
-
-        //将收到的客户端消息保存到数据库
-        AnnotationDao annotationDao = AnnotationDaoFactory.getAnnotationDao();
-
-        for (Annotation annotation : annotationArr) {
-            annotationDao.add(annotation);
+        Annotation[] annotationArr = null;
+        if (split[1] != null) {
+            annotationArr = JackSonUtils.jsonArrToBeanArr(split[1], Annotation[].class);
         }
 
+        //遍历转互换后的数组，并且保存到数据库
+        for (Annotation annotation : annotationArr) {
+            LOGGER.info("switch 传入参数：{}",split[0]);
+            switch (split[0]){
+                case "save":
+                    //遍历转互换后的数组，并且保存到数据库
+                    annotationDao.add(annotation);
+                    break;
+
+                case "delete":
+                    annotationDao.del(annotation.getId());
+                    break;
+
+                case "modify":
+                    annotationDao.mod(annotation);
+                    break;
+
+                default:
+                    LOGGER.error("switch 传入参数不匹配");
+                    break;
+            }
+        }
 
         for(WebSocketDemo item:set){
             try {
                 item.sendMessage(message);
-                CommonUtils.LOGGER.info("接收到消息:{}", message);
             }catch (Exception e){
-                CommonUtils.LOGGER.error(e);
+                LOGGER.error(e);
                 continue;
             }
         }
@@ -86,8 +109,22 @@ public class WebSocketDemo {
 
     //服务端向客户端发送消息
     public void sendMessage(String message) throws IOException {
-        this.session.getBasicRemote().sendText(message);
+        //this.session.getBasicRemote().sendText(message);
     }
+
+    //一建立连接时就将查询的数据库信息发送到客户端
+    public void sendMessage() throws IOException {
+        Annotation[] annotationArr = annotationDao.findAllArr();
+
+        String json = JackSonUtils.beanToJson(annotationArr);
+
+        LOGGER.info("将查询到的数据库数据转换成 JSON 后：{}",json);
+
+        this.session.getBasicRemote().sendText(json);
+
+    }
+
+
 
     public static synchronized void add(){
         WebSocketDemo.onlineCount++;

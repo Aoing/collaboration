@@ -147,7 +147,8 @@ public class Annotation {
         this.date = date;
     }
 
-    public Annotation(int xStart, int yStart, int width, int height, int xEnd, int yEnd, String position, String mark, int lineWidth, String borderColor, boolean isSelected, String author, String date) {
+    public Annotation(int id, int xStart, int yStart, int width, int height, int xEnd, int yEnd, String position, String mark, int lineWidth, String borderColor, boolean isSelected, String author, String date) {
+        this.id = id;
         this.xStart = xStart;
         this.yStart = yStart;
         this.width = width;
