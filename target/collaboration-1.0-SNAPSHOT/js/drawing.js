@@ -1,15 +1,10 @@
 //定义全局变量
 var globale = {
 
-    canvas: null,
-    ctx: null,
-
-    init: function(){
-        this.canvas = document.getElementById("canvas");
-        this.ctx = this.canvas.getContext("2d");
-    },
 
 }
+
+var map = new Map();
 
 //创建矩形框集合
 var rects=[
@@ -24,18 +19,19 @@ var rects=[
         mark : "1",
         lineWidth :1,
         borderColor: "blue",
-        isSelected : false
+        isSelected : false,
+        author : "author",
+        date : "20200424",
+        id : 0,
 
     },
 ]
-//初始化参数
-globale.init();
+
 
 //定义创建按钮的div成员，传入此创建的按钮所要添加到的父div的id
 function CreateButtonDiv(div_id){
 
     this.div_id = div_id;
-
 
     //定义绘制拉选框按钮
     this.draw_btn = null;
@@ -45,6 +41,10 @@ function CreateButtonDiv(div_id){
 
     //定义删除矩形框按钮
     this.delete_btn = null;
+
+    //定义保存矩形框按钮
+    this.save_btn = null;
+
 
 }
 
@@ -71,6 +71,12 @@ CreateButtonDiv.prototype = {
         this.delete_btn.type = "button";
         this.delete_btn.value="删除矩形框";
         this.div_id.append(this.delete_btn);
+
+        //创建删除注释按钮
+        this.save_btn = document.createElement("input");
+        this.save_btn.type = "button";
+        this.save_btn.value="保存矩形框";
+        this.div_id.append(this.save_btn);
     }
 
 }
@@ -78,6 +84,13 @@ CreateButtonDiv.prototype = {
 
 // drawConstructor，定义成员变量，即绘图的context属性, 传入包裹 canvas 的父 div
 function drawConstructor(div){
+
+    //2020-4-24 15:09:32    添加作者属性
+    this.author = null;
+
+    this.id = null;
+
+    this.date = null;
 
     this.div = div;
 
@@ -150,38 +163,32 @@ drawConstructor.prototype = {
 
     createCanvas : function(){
 
-        //将当前对象 this 赋值给 __this：代表 drawConstructor 对象，否则在触发事件时，this 指向的事件
-        _this = this;
-
         //创建canvas画布
-        _this.canvas = document.createElement("canvas");
+        this.canvas = document.createElement("canvas");
 
         //设置画布尺寸
-        _this.canvas_w = (_this.div_w).substring(0,( _this.div_w).length-2);
-        _this.canvas_h = (_this.div_h).substring(0,( _this.div_h).length-2);
+        this.canvas_w = (this.div_w).substring(0,( this.div_w).length-2);
+        this.canvas_h = (this.div_h).substring(0,( this.div_h).length-2);
 
         //将 canvas 插入到 div 中
-        _this.div.append( _this.canvas);
+        this.div.append( this.canvas);
 
         //设置canvas位置为浮动
-        _this.canvas.style.position = "absolute";
+        this.canvas.style.position = "absolute";
 
         //获取绘图context
-        _this.context = _this.canvas.getContext('2d');
+        this.context = this.canvas.getContext('2d');
 
         //设置 canvas 画布的尺寸和边线样式
-        _this.canvas.width = _this.canvas_w;
-        _this.canvas.height = _this.canvas_h;
-        _this.canvas.style.border = "dashed";
-        _this.canvas.style.borderColor = "blue";
-        _this.canvas.style.borderWidth = "1";
+        this.canvas.width = this.canvas_w;
+        this.canvas.height = this.canvas_h;
+        this.canvas.style.border = "dashed";
+        this.canvas.style.borderColor = "blue";
+        this.canvas.style.borderWidth = "1";
     },
 
     //添加注释对象，定义默认属性
     addAnnotation : function(){
-
-        //将当前对象 this 赋值给 __this：代表 drawConstructor 对象，否则在触发事件时，this 指向的事件
-        //_this = this;
 
         var annotationElement = {
 
@@ -210,10 +217,10 @@ drawConstructor.prototype = {
             lineWidth : this.lineWidth,
 
             //判断注释右下角是否被选中
-            isSelected : false
+            isSelected : false,
+
+            date : (new Date()).toLocaleString(),
         };
-
-
 
         //将注释对象保存到注释数组中
         rects.push(annotationElement);
@@ -235,7 +242,7 @@ drawConstructor.prototype = {
             rects.splice(_this.selectedIndex,1);
 
             //重新绘制注释
-            _this.drawRects();
+            _this.drawRects(rects);
         }
 
     },
@@ -243,36 +250,33 @@ drawConstructor.prototype = {
     //绘制单个矩形框（在触发mousemove事件时调用），绘制拉选框
     drawRect : function(){
 
-        //将当前对象 this 赋值给 __this：代表 drawConstructor 对象，否则在触发事件时，this 指向的事件
-        _this = this;
-
         // 清除画布，准备绘制，如果不清除会导致绘制很多矩形框
-        _this.context.clearRect(0, 0, _this.canvas.width, _this.canvas.height);
+        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
         // 清除画布后，需要重新绘制，因为这个方法是在鼠标按下并移动的时候进行绘制的，
         // 如果不重新绘制所有注释，则在鼠标按下移动触发MouseMove事件时会导致画布处于被清空状态，
         // 当松开鼠标按键触发 mouseup 事件才会重新绘制
-        _this.drawRects();
+        this.drawRects(rects);
 
-        _this.context.beginPath();
-        //_this.context.rect( _this.xStart, _this.yStart, _this.width, _this.height);
+        this.context.beginPath();
+        //this.context.rect( this.xStart, this.yStart, this.width, this.height);
 
         //通过路径绘制矩形
-        _this.context.moveTo(_this.xStart, _this.yStart);
-        _this.context.lineTo(_this.xEnd, _this.yStart);
-        _this.context.lineTo(_this.xEnd, _this.yEnd);
-        _this.context.lineTo(_this.xStart, _this.yEnd);
-        _this.context.lineTo(_this.xStart, _this.yStart);
+        this.context.moveTo(this.xStart, this.yStart);
+        this.context.lineTo(this.xEnd, this.yStart);
+        this.context.lineTo(this.xEnd, this.yEnd);
+        this.context.lineTo(this.xStart, this.yEnd);
+        this.context.lineTo(this.xStart, this.yStart);
 
-        _this.context.strokeStyle = 'blue';
-        _this.context.lineWidth = 1;
-        // _this.context.fillStyle = 'red';
-        // _this.context.fill();
-        _this.context.stroke();
+        this.context.strokeStyle = 'blue';
+        this.context.lineWidth = 1;
+        // this.context.fillStyle = 'red';
+        // this.context.fill();
+        this.context.stroke();
     },
 
     //绘制所有矩形框
-    drawRects : function(){
+    drawRects : function(rects){
 
         //将当前对象 this 赋值给 __this：代表 drawConstructor 对象，否则在触发事件时，this 指向的事件
         //_this = this;
@@ -281,8 +285,8 @@ drawConstructor.prototype = {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
         // 遍历所有矩形框
-        for(let i=0; i < this.rects.length; i++) {
-            let rect = this.rects[i];
+        for(let i=0; i < rects.length; i++) {
+            let rect = rects[i];
             // 绘制矩形
             // _this.context.strokeStyle="#FF0000";
             // _this.context.strokeRect(rect.x, rect.y, rect.width, rect.height);
@@ -304,7 +308,7 @@ drawConstructor.prototype = {
 
             this.context.fillText("("+ rect.xStart +","+ rect.yStart+"),"+ rect.mark, rect.xStart, rect.yStart+10);
 
-            // _this.context.fillText("!!!!!!!!!!!!!!!!!", _this.rects[i].xUp-400, _this.rects[i].yUp-400);
+            // _this.context.fillText("!!!!!!!!!!!!!!!!!", rects[i].xUp-400, rects[i].yUp-400);
             this.context.fillText("("+ rect.xEnd+","+ rect.yEnd+"),"+ rect.mark, rect.xEnd, rect.yEnd);
 
 
@@ -451,7 +455,7 @@ drawConstructor.prototype = {
         this.positionMark();
         di_text.innerHTML= "鼠标按下左键后移动，鼠标坐标："+ this.xEnd +","+ this.yEnd +",鼠标结束位置："+ this.position;
         // alert(rects.toString());
-        // _this.drawRects();
+        // _this.drawRects(rects);
         // _this.addAnnotation();
 
         this.drawRect();
@@ -470,13 +474,12 @@ drawConstructor.prototype = {
         di_text.innerHTML= "鼠标松开左键，鼠标坐标："+ this.xEnd +","+ this.yEnd +",鼠标结束位置："+ this.position;
 
         this.mark = rects.length + 1;
-        //调用添加注释方法，并且将注释保存到注释数组中
 
         //判断如果初始坐标和结束坐标一样，则不进行绘制
         if(( this.xStart != this.xEnd ) || ( this.yStart != this.yEnd )){
             this.addAnnotation();
             // alert(rects.toString());
-            this.drawRects();
+            this.drawRects(rects);
         }
 
     },
@@ -511,7 +514,7 @@ drawConstructor.prototype = {
             // rects.push(_this.selectedAnnotation);
 
             //调用绘制注释方法，重新绘制所有注释（被选中的注释加粗）
-            this.drawRects();
+            this.drawRects(rects);
 
             //在选中的矩形框的左上角和右下角绘制圆圈
             this.drawCircle(this.selected_xStart, this.selected_yStart);
@@ -542,7 +545,7 @@ drawConstructor.prototype = {
             rects[this.selectedIndex].yEnd = this.selected_yEnd + this.yEnd - this.yStart;
 
             //重新绘制
-            this.drawRects();
+            this.drawRects(rects);
         }
     },
 
@@ -563,7 +566,7 @@ drawConstructor.prototype = {
             rects[this.selectedIndex].xEnd = rects[this.selectedIndex].xStart + rects[this.selectedIndex].width;
             rects[this.selectedIndex].yEnd = rects[this.selectedIndex].yStart + rects[this.selectedIndex].height;
             //重新绘制
-            this.drawRects();
+            this.drawRects(rects);
         }
     },
 
@@ -609,7 +612,7 @@ drawConstructor.prototype = {
                     if (_this.selectedIndex >= 0) { //将选中的矩形框边框变回原先样式
                         rects[_this.selectedIndex].lineWidth = 1;
 
-                        _this.drawRects();
+                        _this.drawRects(rects);
 
                         // }
 
@@ -666,20 +669,27 @@ drawConstructor.prototype = {
             _this.deleteAnnotation(e);
 
         };
-    }
+    },
+
+    saveAnnotationEvent : function (rects) {
+        for (let i = 0; i < rects.length; i++){
+            console.log(rects[i].date);
+        }
+        alert("保存注释");
+    },
 
 }
 
 var but_test = document.getElementById("but_test");
 var button_div = document.getElementById("button_div");
 var di_text = document.getElementById("text");
-var div = document.getElementById("container");
+var div = document.getElementById("canvasDiv");
 
 
 
 var canvasDiv = new drawConstructor(div);
 canvasDiv.createCanvas();
-canvasDiv.drawRects();
+canvasDiv.drawRects(rects);
 
 
 var btns = new CreateButtonDiv(button_div);
@@ -700,10 +710,17 @@ btns.draw_btn.onclick = function(){
 
 };
 
-//点击删除注释按钮，则触发绘制事件
+//点击删除注释按钮，则触发删除事件
 btns.delete_btn.onclick = function(){
 
     canvasDiv.deleteAnnotationEvent();
+
+};
+
+//点击保存注释按钮，则触发保存事件
+btns.save_btn.onclick = function(){
+
+    canvasDiv.saveAnnotationEvent(rects);
 
 };
 

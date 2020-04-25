@@ -1,0 +1,68 @@
+
+<html>
+<head>
+    <meta http-equiv="Content-Type" charset="UTF-8" content="text/html">
+    <title>web socket</title>
+
+</head>
+<body>
+<h2>webSocket test</h2>
+input date:<input type="text" name="message" id="message"/>
+<input id="openWebSockeButton" type="button" name="openWebSockeButton"  value="open"/>
+<input id="sendMessageButton" type="button" name="sendMessageButton"  value="send"/>
+<input id="closeWebSocketButton" type="button" name="closeWebSocketButton"  value="close"/>
+<div id="div"></div>
+
+<script type="text/javascript">
+    var webSocket;
+    if("WebSocket" in window){
+        webSocket=new WebSocket("ws://localhost:8080/collaboration/websocket")
+    }
+
+    webSocket.onopen=function(){
+        setMessage("websocket开启连接成功");
+    }
+    webSocket.οnerrοr=function (ev) {
+        setMessage("websocket 错误");
+    }
+    webSocket.onmessage=function (ev) {
+        setMessage(ev.data);
+    }
+    webSocket.onclose=function (ev) {
+        setMessage("websocket关闭");
+    }
+
+    /*window.οnunlοad=function (ev) {
+        closeWebSocket();
+    }*/
+
+    function openWebSocket(){
+        webSocket.open();
+    }
+
+    function closeWebSocket(){
+        webSocket.close()
+    }
+
+    function setMessage(message){
+        document.getElementById("div").innerHTML+=message+"<br/>";
+    }
+
+    function sendMessage(){
+        alert("发送消息");
+        var content=document.getElementById("message").value;
+        webSocket.send(content);
+    }
+
+    let openWebSockeButton = document.getElementById("openWebSockeButton");
+    let sendMessageButton = document.getElementById("sendMessageButton");
+    let closeWebSocketButton = document.getElementById("closeWebSocketButton");
+
+    openWebSockeButton.addEventListener("click", openWebSocket);
+    sendMessageButton.addEventListener("click", sendMessage);
+    closeWebSocketButton.addEventListener("click", closeWebSocket);
+
+
+</script>
+</body>
+</html>

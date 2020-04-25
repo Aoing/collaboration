@@ -1,0 +1,61 @@
+<html>
+
+<head>
+    <meta content="text/html" charset="UTF-8" http-equiv="Content-Type">
+
+    <script>
+        var ws;
+        var target = "ws://localhost:80/websocket";
+
+        let messageDiv = document.getElementById("messageDiv");
+        let sendMsg = document.getElementById("sendMsg");
+
+        var webSocket;
+        //打开页面就开启Socket连接
+        if ('WebSocket' in window) {
+            ws = new WebSocket(target);
+        } else if ('MozWebSocket' in window) {//火狐
+            ws = new MozWebSocket(target);
+        } else {
+            alert("请使用支持 WebSocket 的浏览器！");
+        }
+
+        webSocket.onopen=function(){
+            setMessage("websocket开启连接成功");
+        }
+        webSocket.οnerrοr=function (ev) {
+            setMessage("websocket 错误");
+        }
+        webSocket.onmessage=function (ev) {
+            setMessage(ev.data);
+        }
+        webSocket.onclose=function (ev) {
+            setMessage("websocket关闭");
+        }
+
+        window.οnunlοad=function (ev) {
+            closeWebSocket();
+        }
+        function closeWebSocket(){
+            webSocket.close()
+        }
+
+        function setMessage(message){
+            messageDiv.innerHTML+=message+"<br/>";
+        }
+
+        function sendMessage(){
+            var content=document.getElementById("message").value;
+            webSocket.send(content);
+        }
+
+    </script>
+</head>
+
+<body>
+
+    <div id="messageDiv"></div>
+    <input type="text" id="message">
+    <button id="sendMsg"></button>
+</body>
+</html>

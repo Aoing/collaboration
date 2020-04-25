@@ -10,8 +10,8 @@ import org.apache.logging.log4j.Logger;
  * @create 2020-04-21 15:07:27
  * @since v1.0.0
  */
-public class Utils {
+public class CommonUtils {
 
-    public static final Logger LOGGER = LogManager.getLogger(Utils.class);
+    public static final Logger LOGGER = LogManager.getLogger(CommonUtils.class);
 
 }

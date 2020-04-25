@@ -2,7 +2,7 @@ package aoing.servlet;
 
 import aoing.bean.User;
 import aoing.service.LoginServiceImpl;
-import aoing.utils.Utils;
+import aoing.utils.CommonUtils;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -10,7 +10,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 
 /**
@@ -32,7 +31,7 @@ public class LoginServlet  extends HttpServlet {
         String username = (String) req.getParameter("username");
         String password = (String) req.getParameter("password");
 
-        Utils.LOGGER.info("username: "+ username + ", password: " + password);
+        CommonUtils.LOGGER.info("username: "+ username + ", password: " + password);
 
         LoginServiceImpl loginService = new LoginServiceImpl();
         boolean verify = loginService.verify(new User(username, password));
