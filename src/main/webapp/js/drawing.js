@@ -593,22 +593,15 @@ drawConstructor.prototype = {
 
         if((this.selectedAnnotation) != null){
             //修改被选中的矩形的坐标:原始坐标+鼠标移动的距离
-            this.selectedAnnotation.width = this.selected_width + this.xEnd - this.xStart;
-            this.selectedAnnotation.height = this.selected_height + this.yEnd - this.yStart;
+            this.selectedAnnotation.width = Math.abs(this.selected_width + this.xEnd - this.xStart);
+            this.selectedAnnotation.height = Math.abs(this.selected_height + this.yEnd - this.yStart);
 
+            this.selectedAnnotation.xEnd = this.xEnd;
+            this.selectedAnnotation.yEnd = this.yEnd;
+/*
             this.selectedAnnotation.xEnd = this.selectedAnnotation.xStart + this.selectedAnnotation.width;
             this.selectedAnnotation.yEnd = this.selectedAnnotation.yStart + this.selectedAnnotation.height;
-
-            /*let x1 = this.selectedAnnotation.xStart;
-            let y1 = this.selectedAnnotation.yStart;
-            let x2 = this.selectedAnnotation.xEnd;
-            let y2 = this.selectedAnnotation.yEnd;
-
-            //调整左上角和右下角坐标，保证左上角坐标比右下角小
-            this.selectedAnnotation.xStart = x1 < x2 ? x1 : x2;
-            this.selectedAnnotation.yStart = y1 < y2 ? y1 : y2;
-            this.selectedAnnotation.xEnd = x1 > x2 ? x1 : x2;
-            this.selectedAnnotation.yEnd = y1 > y2 ? y1 : y2;*/
+*/
 
             //重新绘制
             this.drawRects(rects);
@@ -678,6 +671,17 @@ drawConstructor.prototype = {
                                 console.log("addArr 中不存在mark是 "+ _this.selectedAnnotation.mark + " 的元素");
                             }
                         }
+
+                        let x1 = _this.selectedAnnotation.xStart;
+                        let y1 = _this.selectedAnnotation.yStart;
+                        let x2 = _this.selectedAnnotation.xEnd;
+                        let y2 = _this.selectedAnnotation.yEnd;
+
+                        //调整左上角和右下角坐标，保证左上角坐标比右下角小
+                        _this.selectedAnnotation.xStart = x1 < x2 ? x1 : x2;
+                        _this.selectedAnnotation.yStart = y1 < y2 ? y1 : y2;
+                        _this.selectedAnnotation.xEnd = x1 > x2 ? x1 : x2;
+                        _this.selectedAnnotation.yEnd = y1 > y2 ? y1 : y2;
 
                         _this.drawRects(rects);
 
